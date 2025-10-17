@@ -1,0 +1,123 @@
+# Individual model training CronJobs for more granular control
+# NOTE: These are NOT currently deployed. Using unified trainer (20-trainer-cronjob.yaml) instead.
+# Keep this file as reference for alternative deployment strategy.
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rps-trainer-xgboost
+  namespace: mlops-poc
+spec:
+  schedule: "30 */2 * * *"  # Every 2 hours at :30
+  concurrencyPolicy: Forbid  # CRITICAL: Only 1 job at a time
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: xgboost-trainer
+            image: ghcr.io/jimmyrisk/rps-trainer:latest
+            command: ["python", "trainer/train_xgboost.py"]
+            resources:
+              requests:
+                memory: "600Mi"
+                cpu: "500m"
+              limits:
+                memory: "1Gi"
+                cpu: "1500m"
+            volumeMounts:
+            - name: data
+              mountPath: /data
+            envFrom:
+            - secretRef:
+                name: external-creds
+            env:
+            - name: DATA_PATH
+              value: /data
+            - name: MLFLOW_EXPERIMENT_NAME
+              value: "rps-bot"
+            - name: MLFLOW_MODEL_NAME
+              value: "rps_bot_xgboost"
+            - name: PROMOTE_STAGE
+              value: "Production"
+            - name: N_ESTIMATORS
+              value: "200"
+            - name: MAX_DEPTH
+              value: "8"
+            - name: LEARNING_RATE
+              value: "0.1"
+            - name: LOOKBACK
+              value: "3"
+            - name: MIN_SUP_ROWS
+              value: "200"
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: data-pvc
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rps-trainer-feedforward
+  namespace: mlops-poc
+spec:
+  schedule: "45 */2 * * *"  # Every 2 hours at :45
+  concurrencyPolicy: Forbid  # CRITICAL: Only 1 job at a time
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: feedforward-trainer
+            image: ghcr.io/jimmyrisk/rps-trainer:latest
+            command: ["python", "trainer/train_feedforward.py"]
+            resources:
+              requests:
+                memory: "700Mi"
+                cpu: "500m"
+              limits:
+                memory: "1.2Gi"
+                cpu: "1500m"
+            volumeMounts:
+            - name: data
+              mountPath: /data
+            envFrom:
+            - secretRef:
+                name: external-creds
+            env:
+            - name: DATA_PATH
+              value: /data
+            - name: MLFLOW_EXPERIMENT_NAME
+              value: "rps-bot"
+            - name: MLFLOW_MODEL_NAME
+              value: "rps_bot_feedforward"
+            - name: PROMOTE_STAGE
+              value: "Production"
+            - name: HIDDEN_SIZES
+              value: "128,64,32"
+            - name: DROPOUT_RATE
+              value: "0.3"
+            - name: EPOCHS
+              value: "100"
+            - name: BATCH_SIZE
+              value: "64"
+            - name: LR
+              value: "0.001"
+            - name: WEIGHT_DECAY
+              value: "0.0001"
+            - name: PATIENCE
+              value: "20"
+            - name: LOOKBACK
+              value: "3"
+            - name: MIN_SUP_ROWS
+              value: "200"
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: data-pvc

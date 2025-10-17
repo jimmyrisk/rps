@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: legacy-gameplay
+  namespace: mlops-poc
+spec:
+  schedule: "*/30 * * * *"  # Every 30 minutes
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: player
+            # Use the trainer image which has Python, bot_vs_bot_sim.py, and app modules
+            image: ghcr.io/jimmyrisk/rps-trainer:latest
+            command: ["/bin/bash", "/scripts/play_legacy_game.sh"]
+            env:
+            - name: API_BASE
+              value: "https://mlops-rps.uk"
+            volumeMounts:
+            - name: script
+              mountPath: /scripts
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+              limits:
+                memory: "256Mi"
+                cpu: "500m"
+          volumes:
+          - name: script
+            configMap:
+              name: legacy-gameplay-script
+              defaultMode: 0755

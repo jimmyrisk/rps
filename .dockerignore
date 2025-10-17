@@ -1,0 +1,32 @@
+# Version control
+.git
+.github
+
+# Python cache and environments
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+env/
+.env
+
+# Data and models (not needed for training)
+*.db
+data/
+local/
+local_mlflow/
+mlruns/
+exports/
+
+# Documentation and configs not needed in containers
+README.md
+*.md
+.gitignore
+.dockerignore
+
+# Large test/development files
+multinomial_coefficients.png
+*.csv
+*.log

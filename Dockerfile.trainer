@@ -1,7 +1,30 @@
 FROM python:3.11-slim
+
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+# Install dependencies in a single layer
+COPY requirements.trainer.txt ./
+COPY pyproject.toml ./
 COPY trainer ./trainer
-ENV DATA_PATH=/data
-CMD ["python", "trainer/train.py"]
+RUN pip install --no-cache-dir -r requirements.trainer.txt \
+    && pip install --no-cache-dir . \
+    && pip cache purge \
+    && rm -rf /root/.cache/pip \
+    && rm requirements.trainer.txt
+
+# Copy application modules required for feature generation
+COPY app ./app
+
+# Copy shared scripts used post-training (auto-promotion, sync helpers)
+COPY scripts ./scripts
+
+# Copy bot simulation script for automated gameplay jobs
+COPY bot_vs_bot_sim.py ./
+
+# Set Python path so trainer modules can import each other and app modules
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Use the optimized multi-model training pipeline
+CMD ["python", "trainer/train_all_models.py"]

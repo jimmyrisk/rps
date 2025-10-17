@@ -1,0 +1,10 @@
+# Dockerfile.ui
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.ui.txt .
+RUN pip install --no-cache-dir -r requirements.ui.txt
+COPY ui/app.py ./app.py
+ENV STREAMLIT_SERVER_PORT=8501 \
+    STREAMLIT_SERVER_HEADLESS=true \
+    STREAMLIT_BROWSER_GATHERUSAGESTATS=false
+CMD ["streamlit","run","app.py","--server.address=0.0.0.0","--server.baseUrlPath=/ui"]

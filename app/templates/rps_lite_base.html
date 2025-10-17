@@ -1,0 +1,260 @@
+{% set show_debug = show_debug if show_debug is defined else False %}
+{% set grafana_dashboard_url = grafana_url or "https://jimmyrisk41.grafana.net/public-dashboards/786f7f916d084387b726ac4e7e8a7d95" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title | default("RPS Quest") }}</title>
+  <!-- DEPLOYMENT_MARKER: 2025-09-28-22:55:00-STATE-MANAGEMENT-FIX -->
+  <link rel="stylesheet" href="/static/css/rps-lite.css?v={{ asset_version }}" />
+</head>
+<body>
+  <div
+    class="layout"
+    id="rps-lite-app"
+    data-api-base="{{ api_base | default('', true) }}"
+    data-grafana-url="{{ grafana_url | default('', true) }}"
+    data-metrics-reset="{{ metrics_reset | default('', true) }}"
+    data-default-debug="{{ 'true' if show_debug else 'false' }}"
+  >
+    <div class="primary-panels">
+      <aside class="panel session-panel" aria-label="Session configuration">
+        <div class="stack">
+          <h2>Session</h2>
+          <p class="meta">Session code · <span class="session-code" id="player-code">---</span> <span class="session-hint">(Resets daily)</span></p>
+          <label class="input">
+            Display name
+            <input type="text" id="player-name" placeholder="Adventurer" autocomplete="off" />
+          </label>
+        </div>
+        <div class="stack">
+          <span class="label">Choose Your Opponent</span>
+          <div class="policy-grid" id="policy-buttons"></div>
+        </div>
+        <div class="stack">
+          <button class="primary-btn" id="start-game" type="button">Start new game</button>
+          <button class="ghost-btn" id="end-game" type="button" hidden>End game</button>
+          <button class="ghost-btn" id="reset-session" type="button">Reset session</button>
+        </div>
+        <div class="status-banner" id="status-banner"></div>
+        <p class="meta warn" id="data-health-banner" hidden></p>
+      </aside>
+
+      <main class="panel play-panel" aria-live="polite">
+        <header class="content-header">
+          <h1>RPS Quest</h1>
+          <div class="header-links">
+            <a
+              class="cta-link"
+              href="https://jimmyrisk.github.io/rps/"
+              target="_blank"
+              rel="noopener"
+              title="Learn more at my website: https://jimmyrisk.github.io/rps/"
+            >🔍 Learn&nbsp;more</a>
+            <a
+              class="cta-link"
+              href="{{ grafana_dashboard_url }}"
+              target="_blank"
+              rel="noopener"
+              title="Open the live MLOps monitoring dashboard"
+            >📈 MLOps&nbsp;Monitoring&nbsp;Dashboard</a>
+          </div>
+        </header>
+
+        <section class="empty-state" id="empty-state">
+          <h2>Choose Your Opponent</h2>
+          <p>Select a bot from the left panel and start battling!</p>
+        </section>
+
+        <section class="scoreboard" id="scoreboard" hidden>
+          <div class="hp-grid">
+            <div class="hp-card" data-side="player">
+              <div class="hp-title">
+                <span id="player-name-label">Player</span>
+              </div>
+              <div class="hp-track"><div class="hp-fill" id="player-hp-fill"></div></div>
+              <div class="hp-caption">
+                <strong id="player-hp">100 HP</strong>
+                <span id="player-damage" class="blip" hidden>−0</span>
+              </div>
+            </div>
+            <div class="hp-card" data-side="bot">
+              <div class="hp-title">
+                <span id="bot-name-label">Bot</span>
+              </div>
+              <div class="hp-track"><div class="hp-fill" id="bot-hp-fill"></div></div>
+              <div class="hp-caption">
+                <strong id="bot-hp">100 HP</strong>
+                <span id="bot-damage" class="blip" hidden>−0</span>
+              </div>
+            </div>
+          </div>
+          <div class="winner-banner" id="winner-banner"></div>
+        </section>
+
+        <section class="game-over-leaderboard" id="game-over-leaderboard" hidden>
+          <header class="game-over-header">
+            <h2>Battle complete</h2>
+            <p class="meta" id="game-over-summary"></p>
+          </header>
+          <div class="leaderboard game-over-board">
+            <div class="leaderboard-controls" id="leaderboard-gameover-controls"></div>
+            <div class="leaderboard-toggles">
+              <button class="ghost-btn" id="leaderboard-gameover-refresh" type="button">Refresh</button>
+            </div>
+            <ul class="leaderboard-list" id="leaderboard-gameover-list"></ul>
+            <div class="leaderboard-meta" id="leaderboard-gameover-meta"></div>
+          </div>
+          <p class="meta game-over-hint">Use the controls to review streaks, then start your next match from the session panel.</p>
+        </section>
+
+        <section class="battle-arena" id="battle-arena" hidden>
+          <div class="fighters">
+            <div class="fighter" data-side="player">
+              <h3 id="player-name-display">You</h3>
+              <div class="face" id="player-face">🙂</div>
+              <div class="move-chip" id="player-move">—</div>
+              <div class="dmg-chip" id="player-dmg-chip">0 DMG</div>
+            </div>
+            <div class="vs" aria-hidden="true">VS</div>
+            <div class="fighter" data-side="bot">
+              <h3 id="bot-name">Bot</h3>
+              <div class="face" id="bot-face">🤖</div>
+              <div class="move-chip" id="bot-move">—</div>
+              <div class="dmg-chip" id="bot-dmg-chip">0 DMG</div>
+            </div>
+          </div>
+          <div class="round-summary" id="round-summary">Start a game to enter the arena.</div>
+        </section>
+        <section class="move-controls" id="move-controls" hidden>
+          <div class="move-triangle" id="move-triangle">
+            <svg class="triangle-svg" id="triangle-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <defs>
+                <marker id="arrow-head" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                  <path d="M0,0 L10,5 L0,10 z" fill="rgba(148,163,184,0.6)"></path>
+                </marker>
+              </defs>
+              <line class="edge" data-line="rock-scissors" marker-end="url(#arrow-head)" />
+              <text class="beats-text" data-label="rock-scissors">beats</text>
+              <line class="edge" data-line="scissors-paper" marker-end="url(#arrow-head)" />
+              <text class="beats-text" data-label="scissors-paper">beats</text>
+              <line class="edge" data-line="paper-rock" marker-end="url(#arrow-head)" />
+              <text class="beats-text" data-label="paper-rock">beats</text>
+              <polygon class="beats-arrow" data-arrow="rock-scissors" points="0,-5 14,0 0,5"></polygon>
+              <polygon class="beats-arrow" data-arrow="scissors-paper" points="0,-5 14,0 0,5"></polygon>
+              <polygon class="beats-arrow" data-arrow="paper-rock" points="0,-5 14,0 0,5"></polygon>
+            </svg>
+            <div class="move-node move-node-rock" data-node="rock">
+              <button class="primary-btn move-btn" data-move="rock" type="button">🪨 Rock</button>
+              <span class="dmg-pill" data-dmg="rock">DMG 10</span>
+            </div>
+            <div class="move-node move-node-paper" data-node="paper">
+              <button class="primary-btn move-btn" data-move="paper" type="button">📄 Paper</button>
+              <span class="dmg-pill" data-dmg="paper">DMG 10</span>
+            </div>
+            <div class="move-node move-node-scissors" data-node="scissors">
+              <button class="primary-btn move-btn" data-move="scissors" type="button">✂️ Scissors</button>
+              <span class="dmg-pill" data-dmg="scissors">DMG 10</span>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="secondary-grid">
+      <section class="panel stack">
+        <h3>Win Streak Leaderboard</h3>
+        <div class="leaderboard" id="leaderboard">
+          <div class="leaderboard-controls" id="leaderboard-controls"></div>
+          <div class="leaderboard-toggles">
+            <button class="ghost-btn" id="leaderboard-refresh" type="button">Refresh</button>
+          </div>
+          <ul class="leaderboard-list" id="leaderboard-list"></ul>
+          <div class="leaderboard-meta" id="leaderboard-meta"></div>
+        </div>
+      </section>
+
+      <section class="panel history-card" id="history-card" hidden>
+        <div>
+          <h3>Last round</h3>
+          <div id="last-round-detail">Start a game to see round-by-round updates.</div>
+        </div>
+        <div>
+          <h3>Recent rounds</h3>
+          <ul class="history-list" id="recent-history"></ul>
+          <span class="meta" id="recent-history-meta"></span>
+        </div>
+        <div>
+          <h3>Session stats</h3>
+          <div class="session-stats" id="session-stats-summary"></div>
+        </div>
+      </section>
+
+      {% if show_debug %}
+      <section class="panel developer-panel">
+        <h3>Developer tools</h3>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-debug" />
+          Show debug details
+        </label>
+        <div class="debug-actions">
+          <button type="button" id="debug-test-bot-rates">🧪 Bot Win Rates</button>
+          <button type="button" id="debug-test-streaks">🧪 Win Streaks</button>
+        </div>
+        <div class="api-log" id="api-debug-log"></div>
+        <div id="debug-panel" class="debug-panel"></div>
+      </section>
+
+      <section class="panel analysis-grid" id="analysis-grid" hidden>
+        <div class="analysis-card" id="analysis-game">
+          <h3>Game</h3>
+          <dl>
+            <dt>Target</dt><dd id="analysis-target">—</dd>
+            <dt>Policy</dt><dd id="analysis-policy">—</dd>
+            <dt>Session</dt><dd id="analysis-session">—</dd>
+            <dt>Game</dt><dd id="analysis-game-id">—</dd>
+          </dl>
+        </div>
+        <div class="analysis-card" id="analysis-bot">
+          <h3>Bot analysis</h3>
+          <div id="analysis-phase" class="meta">Opening gambit</div>
+          <div id="analysis-bot-probs" class="prob-grid"></div>
+          <ul class="expected-values" id="analysis-expected"></ul>
+          <div class="meta" id="analysis-predicted"></div>
+        </div>
+        <div class="analysis-card" id="analysis-last">
+          <h3>Last round</h3>
+          <div class="analysis-json" id="analysis-last-json">Awaiting data…</div>
+        </div>
+        <div class="analysis-card" id="analysis-session-card">
+          <h3>Session</h3>
+          <div class="session-stats" id="analysis-session-stats"></div>
+          <h4>Recent API calls</h4>
+          <div class="api-log" id="analysis-api-log"></div>
+        </div>
+      </section>
+      {% endif %}
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    <a
+      class="cta-link"
+      href="https://jimmyrisk.github.io/rps/"
+      target="_blank"
+      rel="noopener"
+      title="Learn more about the project"
+    >🔍 Learn more</a>
+    <a
+      class="cta-link"
+      href="{{ grafana_dashboard_url }}"
+      target="_blank"
+      rel="noopener"
+      title="Open the live MLOps monitoring dashboard"
+    >📈 MLOps Monitoring Dashboard</a>
+  </footer>
+
+  <script src="/static/js/rps-lite.js?v={{ asset_version }}" defer></script>
+</body>
+</html>

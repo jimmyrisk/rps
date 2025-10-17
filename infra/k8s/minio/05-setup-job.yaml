@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-setup
+  namespace: mlops-poc
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: mc
+        image: minio/mc:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          #!/bin/sh
+          set -e
+          
+          echo "Waiting for MinIO to be ready..."
+          until mc alias set local http://minio.mlops-poc.svc.cluster.local:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY; do
+            echo "MinIO not ready yet, waiting..."
+            sleep 2
+          done
+          
+          echo "Creating mlflow-artifacts bucket..."
+          mc mb local/mlflow-artifacts --ignore-existing
+          
+          echo "Setting bucket policy to allow MLflow access..."
+          mc anonymous set download local/mlflow-artifacts
+          
+          echo "MinIO setup complete!"
+          mc ls local/
+        env:
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-secret
+              key: access-key
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-secret
+              key: secret-key

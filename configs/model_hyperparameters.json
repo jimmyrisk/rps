@@ -1,0 +1,856 @@
+{
+  "version": "2025-10-07-normalized",
+  "description": "Clean, boundary-pushing hyperparameter sweep: 12 configs per model with natural values and distinct regimes. [NORMALIZED: All epochs set to 200 for fair comparison after data leakage fix]",
+  "models": [
+    {
+      "model_type": "feedforward",
+      "model_name": "rps_bot_feedforward",
+      "configs": [
+        {
+          "id": "ffnn_c01",
+          "description": "Baseline: medium width, light dropout.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              128,
+              64
+            ],
+            "dropout_rate": 0.1,
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "patience": 25,
+            "reduce_lr_patience": 7,
+            "lambda_danger": 0.0
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "01"
+          }
+        },
+        {
+          "id": "ffnn_c02",
+          "description": "Compact network without dropout to probe underfitting/instability.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              64,
+              32
+            ],
+            "dropout_rate": 0.0,
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "patience": 20,
+            "reduce_lr_patience": 6,
+            "lambda_danger": 0.0
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "02"
+          }
+        },
+        {
+          "id": "ffnn_c03",
+          "description": "Wide 2-layer, slower lr, longer horizon (capacity + stability).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              256,
+              128
+            ],
+            "dropout_rate": 0.2,
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.0005,
+            "weight_decay": 0.0001,
+            "patience": 35,
+            "reduce_lr_patience": 8,
+            "lambda_danger": 0.0
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "03"
+          }
+        },
+        {
+          "id": "ffnn_c04",
+          "description": "Deeper 3-layer, light dropout (learn richer patterns).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              128,
+              128,
+              64
+            ],
+            "dropout_rate": 0.1,
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.0005,
+            "weight_decay": 0.0001,
+            "patience": 35,
+            "reduce_lr_patience": 8,
+            "lambda_danger": 0.1
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "04"
+          }
+        },
+        {
+          "id": "ffnn_c05",
+          "description": "Tapered 3-layer, moderate regularization, danger-aware (0.1).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              128,
+              64,
+              32
+            ],
+            "dropout_rate": 0.2,
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.001,
+            "weight_decay": 0.0003,
+            "patience": 30,
+            "reduce_lr_patience": 8,
+            "lambda_danger": 0.1
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "05"
+          }
+        },
+        {
+          "id": "ffnn_c06",
+          "description": "Very wide 2-layer, very low lr, long training (high capacity).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              512,
+              256
+            ],
+            "dropout_rate": 0.1,
+            "epochs": 200,
+            "batch_size": 256,
+            "lr": 0.0005,
+            "weight_decay": 0.0001,
+            "patience": 40,
+            "reduce_lr_patience": 10,
+            "lambda_danger": 0.1
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "06"
+          }
+        },
+        {
+          "id": "ffnn_c07",
+          "description": "Heavy dropout + stronger weight decay (regularization stress test).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              128,
+              64
+            ],
+            "dropout_rate": 0.3,
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.001,
+            "weight_decay": 0.0005,
+            "patience": 30,
+            "reduce_lr_patience": 8,
+            "lambda_danger": 0.3
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "07"
+          }
+        },
+        {
+          "id": "ffnn_c08",
+          "description": "No weight decay, moderate dropout (tests reliance on dropout only).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              128,
+              64
+            ],
+            "dropout_rate": 0.2,
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.001,
+            "weight_decay": 0.0,
+            "patience": 25,
+            "reduce_lr_patience": 7,
+            "lambda_danger": 0.3
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "08"
+          }
+        },
+        {
+          "id": "ffnn_c09",
+          "description": "Deep & wide 3-layer (256-256-128) with moderate regularization.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              256,
+              256,
+              128
+            ],
+            "dropout_rate": 0.2,
+            "epochs": 200,
+            "batch_size": 256,
+            "lr": 0.0005,
+            "weight_decay": 0.0003,
+            "patience": 40,
+            "reduce_lr_patience": 10,
+            "lambda_danger": 0.3
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "09"
+          }
+        },
+        {
+          "id": "ffnn_c10",
+          "description": "Small network with high danger penalty (0.6) to probe strong caution.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              64,
+              32
+            ],
+            "dropout_rate": 0.1,
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "patience": 22,
+            "reduce_lr_patience": 6,
+            "lambda_danger": 0.6
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "10"
+          }
+        },
+        {
+          "id": "ffnn_c11",
+          "description": "Medium 2-layer, heavy dropout + strong weight decay + high danger.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              128,
+              64
+            ],
+            "dropout_rate": 0.3,
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.0005,
+            "weight_decay": 0.0005,
+            "patience": 35,
+            "reduce_lr_patience": 8,
+            "lambda_danger": 0.6
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "11"
+          }
+        },
+        {
+          "id": "ffnn_c12",
+          "description": "Balanced 3-layer (128-64-32), moderate everything (sanity anchor).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "hidden_sizes": [
+              128,
+              64,
+              32
+            ],
+            "dropout_rate": 0.1,
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "patience": 28,
+            "reduce_lr_patience": 8,
+            "lambda_danger": 0.0
+          },
+          "mlflow_tags": {
+            "config_family": "ffnn_oct2025_clean",
+            "search_index": "12"
+          }
+        }
+      ]
+    },
+    {
+      "model_type": "multinomial_logistic",
+      "model_name": "rps_bot_mnlogit",
+      "configs": [
+        {
+          "id": "mn_c01",
+          "description": "Baseline: lr 0.01, L2 (ridge) 0.1, class weights on.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.01,
+            "l2_lambda": 0.1,
+            "use_class_weights": true,
+            "lambda_danger": 0.0,
+            "patience": 25,
+            "reduce_lr_patience": 7
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "01"
+          }
+        },
+        {
+          "id": "mn_c02",
+          "description": "Low regularization (flexible), class weights on.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.01,
+            "l2_lambda": 0.01,
+            "use_class_weights": true,
+            "lambda_danger": 0.0,
+            "patience": 25,
+            "reduce_lr_patience": 7
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "02"
+          }
+        },
+        {
+          "id": "mn_c03",
+          "description": "High regularization (ridge=1.0), class weights on (stability).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 256,
+            "lr": 0.007,
+            "l2_lambda": 1.0,
+            "use_class_weights": true,
+            "lambda_danger": 0.0,
+            "patience": 30,
+            "reduce_lr_patience": 8
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "03"
+          }
+        },
+        {
+          "id": "mn_c04",
+          "description": "No class weights, moderate ridge (tests bias to head classes).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.01,
+            "l2_lambda": 0.1,
+            "use_class_weights": false,
+            "lambda_danger": 0.0,
+            "patience": 22,
+            "reduce_lr_patience": 6
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "04"
+          }
+        },
+        {
+          "id": "mn_c05",
+          "description": "Introduce danger penalty 0.1 with moderate ridge + weights on.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.01,
+            "l2_lambda": 0.2,
+            "use_class_weights": true,
+            "lambda_danger": 0.1,
+            "patience": 27,
+            "reduce_lr_patience": 7
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "05"
+          }
+        },
+        {
+          "id": "mn_c06",
+          "description": "Danger 0.3, light ridge (more flexible but cautious).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.01,
+            "l2_lambda": 0.05,
+            "use_class_weights": true,
+            "lambda_danger": 0.3,
+            "patience": 28,
+            "reduce_lr_patience": 7
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "06"
+          }
+        },
+        {
+          "id": "mn_c07",
+          "description": "Danger 0.6 (strong caution), moderate ridge, weights on.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 256,
+            "lr": 0.007,
+            "l2_lambda": 0.2,
+            "use_class_weights": true,
+            "lambda_danger": 0.6,
+            "patience": 35,
+            "reduce_lr_patience": 10
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "07"
+          }
+        },
+        {
+          "id": "mn_c08",
+          "description": "No class weights, light ridge, danger 0.1 (tests spikiness).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.01,
+            "l2_lambda": 0.05,
+            "use_class_weights": false,
+            "lambda_danger": 0.1,
+            "patience": 24,
+            "reduce_lr_patience": 6
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "08"
+          }
+        },
+        {
+          "id": "mn_c09",
+          "description": "Higher ridge (0.4), danger 0.3, slower lr, longer patience.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 256,
+            "lr": 0.007,
+            "l2_lambda": 0.4,
+            "use_class_weights": true,
+            "lambda_danger": 0.3,
+            "patience": 40,
+            "reduce_lr_patience": 12
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "09"
+          }
+        },
+        {
+          "id": "mn_c10",
+          "description": "Zero ridge (unregularized), danger 0.0 (pure baseline stress).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.01,
+            "l2_lambda": 0.0,
+            "use_class_weights": false,
+            "lambda_danger": 0.0,
+            "patience": 20,
+            "reduce_lr_patience": 5
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "10"
+          }
+        },
+        {
+          "id": "mn_c11",
+          "description": "Moderate ridge, danger 0.6, weights off (caution vs imbalance).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.01,
+            "l2_lambda": 0.1,
+            "use_class_weights": false,
+            "lambda_danger": 0.6,
+            "patience": 26,
+            "reduce_lr_patience": 7
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "11"
+          }
+        },
+        {
+          "id": "mn_c12",
+          "description": "Anchor: lr 0.01, ridge 0.2, danger 0.1, weights on.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "epochs": 200,
+            "batch_size": 128,
+            "lr": 0.01,
+            "l2_lambda": 0.2,
+            "use_class_weights": true,
+            "lambda_danger": 0.1,
+            "patience": 28,
+            "reduce_lr_patience": 7
+          },
+          "mlflow_tags": {
+            "config_family": "mnlogit_oct2025_clean",
+            "search_index": "12"
+          }
+        }
+      ]
+    },
+    {
+      "model_type": "xgboost",
+      "model_name": "rps_bot_xgboost",
+      "configs": [
+        {
+          "id": "xgb_c01",
+          "description": "Baseline: depth 3, eta 0.08, balanced sampling.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 600,
+            "learning_rate": 0.08,
+            "max_depth": 3,
+            "min_child_weight": 1,
+            "subsample": 0.9,
+            "colsample_bytree": 0.9,
+            "reg_lambda": 1.0,
+            "reg_alpha": 0.1,
+            "gamma": 0.0,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "01"
+          }
+        },
+        {
+          "id": "xgb_c02",
+          "description": "Shallow + fast: depth 2, eta 0.08 (bias test, quick learn).",
+          "promote_alias": "shadow1",
+          "promote_stage": "Production",
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 300,
+            "learning_rate": 0.08,
+            "max_depth": 2,
+            "min_child_weight": 5,
+            "subsample": 1.0,
+            "colsample_bytree": 1.0,
+            "reg_lambda": 3.0,
+            "reg_alpha": 0.3,
+            "gamma": 0.1,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "02"
+          }
+        },
+        {
+          "id": "xgb_c03",
+          "description": "Deep + slow: depth 6, eta 0.03 (high capacity).",
+          "promote_alias": "B",
+          "promote_stage": "Production",
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 1000,
+            "learning_rate": 0.03,
+            "max_depth": 6,
+            "min_child_weight": 1,
+            "subsample": 0.8,
+            "colsample_bytree": 0.8,
+            "reg_lambda": 2.0,
+            "reg_alpha": 0.0,
+            "gamma": 0.0,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "03"
+          }
+        },
+        {
+          "id": "xgb_c04",
+          "description": "Depth 4, eta 0.03, moderate regularization all-around.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 600,
+            "learning_rate": 0.03,
+            "max_depth": 4,
+            "min_child_weight": 2,
+            "subsample": 0.8,
+            "colsample_bytree": 0.8,
+            "reg_lambda": 2.0,
+            "reg_alpha": 0.1,
+            "gamma": 0.1,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "04"
+          }
+        },
+        {
+          "id": "xgb_c05",
+          "description": "Depth 3, eta 0.08 (faster), strong L1, conservative sampling.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 300,
+            "learning_rate": 0.08,
+            "max_depth": 3,
+            "min_child_weight": 3,
+            "subsample": 0.7,
+            "colsample_bytree": 0.7,
+            "reg_lambda": 2.0,
+            "reg_alpha": 0.3,
+            "gamma": 0.0,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "05"
+          }
+        },
+        {
+          "id": "xgb_c06",
+          "description": "Depth 5, eta 0.03, higher min_child_weight (reduce overfit).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 1000,
+            "learning_rate": 0.03,
+            "max_depth": 5,
+            "min_child_weight": 5,
+            "subsample": 0.9,
+            "colsample_bytree": 0.9,
+            "reg_lambda": 3.0,
+            "reg_alpha": 0.1,
+            "gamma": 0.1,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "06"
+          }
+        },
+        {
+          "id": "xgb_c07",
+          "description": "Depth 3, eta 0.08, zero L1, low lambda (let trees roam).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 600,
+            "learning_rate": 0.08,
+            "max_depth": 3,
+            "min_child_weight": 1,
+            "subsample": 1.0,
+            "colsample_bytree": 1.0,
+            "reg_lambda": 1.0,
+            "reg_alpha": 0.0,
+            "gamma": 0.0,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "07"
+          }
+        },
+        {
+          "id": "xgb_c08",
+          "description": "Depth 4, eta 0.08, stronger gamma (prune easy gains).",
+          "promote_alias": "shadow2",
+          "promote_stage": "Production",
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 300,
+            "learning_rate": 0.08,
+            "max_depth": 4,
+            "min_child_weight": 2,
+            "subsample": 0.9,
+            "colsample_bytree": 0.9,
+            "reg_lambda": 2.0,
+            "reg_alpha": 0.1,
+            "gamma": 0.3,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "08"
+          }
+        },
+        {
+          "id": "xgb_c09",
+          "description": "Depth 5, eta 0.03, balanced sampling, medium regularization.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 600,
+            "learning_rate": 0.03,
+            "max_depth": 5,
+            "min_child_weight": 2,
+            "subsample": 0.8,
+            "colsample_bytree": 0.8,
+            "reg_lambda": 2.0,
+            "reg_alpha": 0.1,
+            "gamma": 0.0,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "09"
+          }
+        },
+        {
+          "id": "xgb_c10",
+          "description": "Depth 3, eta 0.03, conservative sampling + strong lambda.",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 1000,
+            "learning_rate": 0.03,
+            "max_depth": 3,
+            "min_child_weight": 3,
+            "subsample": 0.7,
+            "colsample_bytree": 0.7,
+            "reg_lambda": 3.0,
+            "reg_alpha": 0.1,
+            "gamma": 0.1,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "10"
+          }
+        },
+        {
+          "id": "xgb_c11",
+          "description": "Depth 6, eta 0.03, medium child weight (capacity + modest speed).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 600,
+            "learning_rate": 0.03,
+            "max_depth": 6,
+            "min_child_weight": 3,
+            "subsample": 0.9,
+            "colsample_bytree": 0.9,
+            "reg_lambda": 2.0,
+            "reg_alpha": 0.0,
+            "gamma": 0.1,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "11"
+          }
+        },
+        {
+          "id": "xgb_c12",
+          "description": "Depth 4, eta 0.03, zero gamma, light regularization (soft fit).",
+          "promote_alias": null,
+          "promote_stage": null,
+          "hyperparameters": {
+            "objective": "multi:softprob",
+            "num_class": 3,
+            "n_estimators": 1000,
+            "learning_rate": 0.03,
+            "max_depth": 4,
+            "min_child_weight": 2,
+            "subsample": 1.0,
+            "colsample_bytree": 1.0,
+            "reg_lambda": 1.0,
+            "reg_alpha": 0.0,
+            "gamma": 0.0,
+            "tree_method": "hist",
+            "early_stopping_rounds": 30
+          },
+          "mlflow_tags": {
+            "config_family": "xgb_oct2025_clean",
+            "search_index": "12"
+          }
+        }
+      ]
+    }
+  ]
+}

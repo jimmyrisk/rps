@@ -1,8 +1,11 @@
+# Dockerfile.app
 FROM python:3.11-slim
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.app.txt ./
+COPY pyproject.toml ./
+COPY trainer ./trainer
+RUN pip install --no-cache-dir -r requirements.app.txt \
+	&& pip install --no-cache-dir .
 COPY app ./app
-ENV DATA_PATH=/data
-EXPOSE 8080
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+ENV PYTHONUNBUFFERED=1
+CMD ["uvicorn","app.main:app","--host","0.0.0.0","--port","8080"]

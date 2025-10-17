@@ -1,5 +1,113 @@
+# Environment and credentials
 .env
 *.pem
+
+# Build and cache directories
 __pycache__/
 dist/
 .build/
+*.egg-info/
+.pytest_cache/
+
+# Session logs and scratch notes
+session_logs/
+logs/
+tmp_remote_model/
+
+# Retired or local-only helpers
+setup_ab_testing.sh
+scripts/legacy/
+
+# Virtual environments (should not be in repo)
+venv/
+env/
+.venv/
+
+# Secrets and config files
+01-secrets.yaml
+tunnel-config.yaml
+infra/k8s/dev/20-grafana-cloud-ml-metrics-secret.yaml
+infra/k8s/dev/20-grafana-cloud-ml-metrics-secrets.yaml
+infra/k8s/dev/*-secrets.yaml
+infra/k8s/minio/02-secret.yaml
+ops/.grafana_api_key
+ops/
+docs/grafana_*/
+docs/grafana_*.md
+docs/archive/
+docs/sessions/
+docs/*.md
+docs/API_REFERENCE.md
+!docs/architecture.md
+!docs/operations.md
+!docs/metrics.md
+
+# Local development data (DEPRECATED - cluster-only workflow)
+local/
+exports/
+models/
+local_mlflow/
+data/
+tmp_remote_model/
+
+# Archived or temporary artifacts
+**/archive/**
+temp/
+
+# MLflow tracking (DEPRECATED - using DagsHub remote)
+mlruns.db
+mlruns/
+
+# Temporary experiment files
+experiment_*.yaml
+run_*_experiments.sh
+create_experiment_job.py
+
+# Local setup scripts (DEPRECATED)
+local_mlops_env.sh
+setup_local_mlops.sh
+test_local_mlops.sh
+validate_local_setup.py
+mlruns/
+local_mlflow/
+
+# Logs and local state
+*.log
+*.sqlite
+*.db
+tmp/
+*.sqlite3
+
+# Limit tracked operational helpers and tests to essentials
+scripts/*
+!scripts/README.md
+!scripts/build_push_deploy.sh
+!scripts/sync_promoted_models_to_minio.py
+!scripts/register_models_and_aliases.py
+!scripts/promote_models_batch.py
+!scripts/validate.py
+!scripts/verify_legacy_policies.py
+!scripts/legacy/
+validate.py
+verify_legacy_policies.py
+tests/*
+!tests/README.md
+!tests/test_essential.py
+
+# OS and editor files
+.DS_Store
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+
+# Personal/internal notes (keep out of public repo)
+BOT_SIMULATION_README.md
+DAGSHUB_INTEGRATION_NOTES.md
+INTEGRATION_AUDIT.md
+MLOps_README.md

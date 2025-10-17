@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rps-app
+  namespace: mlops-poc
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: rps-app
+  template:
+    metadata:
+      labels:
+        app: rps-app
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/jimmyrisk/rps-app:latest
+          imagePullPolicy: Always
+          args:
+            - uvicorn
+            - app.main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8080"
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1Gi
+            limits:
+              cpu: "1"
+              memory: 1536Mi
+          env:
+            - name: DATA_PATH
+              value: /data
+            - name: MODELS_DIR
+              value: /data/models
+            - name: DEFAULT_MODEL_TYPE
+              value: xgboost
+            - name: ENABLE_METRICS
+              value: "true"
+            - name: PROMETHEUS_MULTIPROC_DIR
+              value: /tmp/prometheus
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: ENABLE_AB_TESTING
+              value: "true"
+            - name: AB_SPLIT_RATIO
+              value: "0.5"
+            - name: GRAFANA_DASHBOARD_URL
+              value: https://jimmyrisk41.grafana.net/public-dashboards/786f7f916d084387b726ac4e7e8a7d95
+            - name: LOCAL_MODELS_DIR
+              value: /data/models
+            - name: PREFER_LOCAL_MODELS
+              value: "true"
+            - name: USE_MINIO
+              value: "true"
+            - name: MINIO_ENDPOINT
+              value: http://minio.mlops-poc.svc.cluster.local:9000
+            - name: MINIO_BUCKET
+              value: mlflow-artifacts
+            - name: MINIO_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: access-key
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: minio-secret
+                  key: secret-key
+            - name: ASSET_VERSION
+              value: "20251018104530"
+            - name: RPS_CAPTURE_INFERENCE_DIR
+              value: /tmp/rps_inference
+            - name: RPS_CAPTURE_INFERENCE_SAMPLE_RATE
+              value: "1.0"
+          envFrom:
+            - secretRef:
+                name: external-creds
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: model-storage
+              mountPath: /data/models
+              readOnly: true
+            - name: prometheus-tmp
+              mountPath: /tmp/prometheus
+        
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: data-pvc
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: rps-models-pvc
+            readOnly: true
+        - name: prometheus-tmp
+          emptyDir: {}

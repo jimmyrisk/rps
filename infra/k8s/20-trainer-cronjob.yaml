@@ -1,0 +1,106 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rps-trainer
+  namespace: mlops-poc
+spec:
+  # Train models when sufficient new data is available (data-driven)
+  # Manual trigger: kubectl -n mlops-poc create job --from=cronjob/rps-trainer train-$(date +%s)
+  schedule: "*/30 * * * *"  # Check every 30 minutes (allows time for training and data accumulation)
+  concurrencyPolicy: Forbid  # CRITICAL: Only 1 job at a time (prevents OOM)
+  successfulJobsHistoryLimit: 1  # Keep only last successful job
+  failedJobsHistoryLimit: 2  # Keep last 2 failures for debugging
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          # If your GHCR repo is private, uncomment the next 3 lines and replace "ghcr"
+          # imagePullSecrets:
+          # - name: ghcr
+          containers:
+          - name: trainer
+            image: ghcr.io/jimmyrisk/rps-trainer:latest
+            imagePullPolicy: Always
+            # Staggered alias-preserving continuation training
+            # All code baked into Docker image, no ConfigMap overrides needed
+            # Wrapper script sets date-based experiment name dynamically
+            command: ["/bin/bash", "-c"]
+            args:
+            - |
+              export MLFLOW_EXPERIMENT_NAME="rps_automated_training_$(date +%Y-%m-%d)"
+              python /app/trainer/run_staggered_alias_training.py --model-types xgboost feedforward_nn multinomial_logistic
+            resources:
+              requests:
+                memory: "800Mi"   # Guaranteed minimum for one model
+                cpu: "500m"       # 0.5 CPU cores
+              limits:
+                memory: "1.5Gi"   # Hard cap (prevents OOM)
+                cpu: "2000m"      # Max 2 CPU cores
+            # Mount the shared data so the trainer can read /data/rps.db
+            volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: model-storage
+              mountPath: /data/models
+            # Bring in your MLflow creds (you created this Secret earlier)
+            envFrom:
+            - secretRef:
+                name: external-creds
+            # Streamlined configuration - use optimized defaults from code
+            env:
+            - name: DATA_PATH
+              value: /data
+            # MLFLOW_EXPERIMENT_NAME now set dynamically in command wrapper (rps_automated_training_YYYY-MM-DD)
+            # MinIO configuration for fast local artifact storage
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: "http://minio.mlops-poc.svc.cluster.local:9000"
+            - name: AWS_ACCESS_KEY_ID
+              value: "minioadmin"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "minioadmin123"
+            # DagsHub tracking (metadata)
+            - name: MLFLOW_TRACKING_URI
+              value: "https://dagshub.com/jimmyrisk/rps.mlflow"
+            # Data-driven training triggers
+            - name: FORCE_TRAINING
+              value: "false"          # Respect data-driven gating by default
+            - name: MIN_NEW_ROWS_FOR_TRAINING
+              value: "50"             # Require at least 50 new usable events
+            - name: MIN_TOTAL_ROWS
+              value: "300"            # Require 300 total usable events before training
+            - name: TRAINING_NEW_ROWS_LOOKBACK_MINUTES
+              value: "2880"           # Consider new events over the last 2 days
+            - name: DRY_RUN
+              value: "false"
+            # Data configuration
+            - name: MAX_USABLE_ROWS
+              value: "3000"           # Use last 3000 usable events (chronologically)
+            # Training settings (production defaults)
+            - name: EPOCHS
+              value: "200"
+            - name: PATIENCE
+              value: "15"
+            - name: REDUCE_LR_PATIENCE
+              value: "7"
+            - name: N_ESTIMATORS
+              value: "200"
+            # A/B testing and aliasing
+            - name: ENABLE_AB_TESTING
+              value: "true"           # Enable A/B testing framework
+            - name: SYNC_TO_DAGSHUB
+              value: "true"           # Post-training sync artifacts to DagsHub
+            # Feature configuration
+            - name: LOOKBACK
+              value: "3"              # AR(3) lookback for features
+            - name: LOCAL_MODELS_DIR
+              value: "/data/models"   # Local model storage path
+            - name: ENABLE_LOCAL_MODEL_STORAGE
+              value: "true"           # Enable local model saving
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: data-pvc
+          - name: model-storage
+            persistentVolumeClaim:
+              claimName: rps-models-pvc

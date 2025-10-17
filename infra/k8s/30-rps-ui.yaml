@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rps-ui
+  namespace: mlops-poc
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: rps-ui
+  template:
+    metadata:
+      labels:
+        app: rps-ui
+    spec:
+      containers:
+        - name: ui
+          image: ghcr.io/jimmyrisk/rps-ui:latest
+          imagePullPolicy: Always
+          args:
+            - streamlit
+            - run
+            - /app/app.py
+            - --server.address=0.0.0.0
+            - --server.baseUrlPath
+            - /ui
+          ports:
+            - containerPort: 8501
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          env:
+            - name: API_BASE
+              value: http://rps-app.mlops-poc.svc.cluster.local
+            - name: GRAFANA_DASHBOARD_URL
+              value: https://jimmyrisk41.grafana.net/public-dashboards/786f7f916d084387b726ac4e7e8a7d95
+            - name: ASSET_VERSION
+              value: "20251018104530"
