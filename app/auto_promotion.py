@@ -8,7 +8,7 @@ FastAPI endpoints.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 import math
 
 
@@ -61,18 +61,6 @@ class RankedAlias:
     accuracy: float
     total_predictions: int
     source_alias: str
-
-
-@dataclass(frozen=True)
-class ChallengerPlacement:
-    """Final placement for challenger aliases after accuracy ranking."""
-
-    target_alias: str
-    source_alias: str
-    accuracy: float
-    total_predictions: int
-    previous_source_alias: str
-    rank: int
 
 
 _ALLOWED_MODEL_TYPES: Sequence[str] = ("xgboost", "feedforward_nn", "multinomial_logistic")
@@ -218,71 +206,6 @@ def rank_aliases_by_accuracy(
     return ranked
 
 
-def compute_challenger_reorder(
-    provenance_map: Dict[str, str],
-    accuracy_map: Dict[str, AliasAccuracyStats],
-    *,
-    preferred_order: Sequence[str] = _ALIAS_REORDER_TARGETS,
-) -> Tuple[bool, List[ChallengerPlacement]]:
-    """Determine challenger alias ordering based on observed accuracy."""
-
-    candidate_pool: List[Tuple[str, str, float, int]] = []
-    for alias in preferred_order:
-        source_alias = provenance_map.get(alias, alias)
-        stats = accuracy_map.get(source_alias, AliasAccuracyStats(correct=0, total=0))
-        candidate_pool.append((alias, source_alias, stats.accuracy, stats.total))
-
-    candidate_pool.sort(
-        key=lambda item: (
-            item[2],
-            item[3],
-            -preferred_order.index(item[0]) if item[0] in preferred_order else -len(preferred_order),
-        ),
-        reverse=True,
-    )
-
-    working_candidates = list(candidate_pool)
-    used_sources: set[str] = set()
-    placements: List[ChallengerPlacement] = []
-    reorder_applied = False
-
-    for rank_idx, target_alias in enumerate(preferred_order, start=1):
-        selected_entry: Optional[Tuple[str, str, float, int]] = None
-        for idx, candidate in enumerate(working_candidates):
-            current_alias, source_alias, accuracy, total = candidate
-            if source_alias in used_sources:
-                continue
-            selected_entry = candidate
-            working_candidates.pop(idx)
-            break
-
-        if selected_entry is None:
-            source_alias = provenance_map.get(target_alias, target_alias)
-            stats = accuracy_map.get(source_alias, AliasAccuracyStats(correct=0, total=0))
-            accuracy = stats.accuracy
-            total = stats.total
-        else:
-            _current_alias, source_alias, accuracy, total = selected_entry
-
-        used_sources.add(source_alias)
-        previous_source = provenance_map.get(target_alias, target_alias)
-        if source_alias != previous_source:
-            reorder_applied = True
-
-        placements.append(
-            ChallengerPlacement(
-                target_alias=target_alias,
-                source_alias=source_alias,
-                accuracy=accuracy,
-                total_predictions=total,
-                previous_source_alias=previous_source,
-                rank=rank_idx,
-            )
-        )
-
-    return reorder_applied, placements
-
-
 def normalise_model_type(model_type: str) -> str:
     value = model_type.strip().lower()
     if value not in _ALLOWED_MODEL_TYPES:
@@ -301,9 +224,7 @@ __all__ = [
     "AliasGameStats",
     "PromotionTestResult",
     "RankedAlias",
-    "ChallengerPlacement",
     "calculate_accuracy",
-    "compute_challenger_reorder",
     "evaluate_promotion_decision",
     "normalise_model_type",
     "rank_aliases_by_accuracy",

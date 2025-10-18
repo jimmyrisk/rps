@@ -81,13 +81,8 @@ tmp/
 # Limit tracked operational helpers and tests to essentials
 scripts/*
 !scripts/README.md
+!scripts/auto_promote_models.py
 !scripts/build_push_deploy.sh
-!scripts/sync_promoted_models_to_minio.py
-!scripts/register_models_and_aliases.py
-!scripts/promote_models_batch.py
-!scripts/validate.py
-!scripts/verify_legacy_policies.py
-!scripts/legacy/
 validate.py
 verify_legacy_policies.py
 tests/*
