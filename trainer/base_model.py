@@ -3,6 +3,7 @@ Base model class to reduce code duplication across all trainers.
 Handles common patterns: data loading, MLflow setup, evaluation, model registration.
 """
 import os
+import re
 import sqlite3
 import pandas as pd
 import numpy as np
@@ -97,11 +98,16 @@ class BaseRPSModel(ABC):
         Filters:
         1. Exclude test games (is_test=0)
         2. Exclude gambit rounds (step_no > 3)
-        3. Limit to last 3000 usable rows chronologically
+        3. Downsample legacy bot games (keep 1 in N, configured via TRAINING_LEGACY_GAME_STRIDE)
+        4. Limit to last 3000 usable rows chronologically
         """
-        from app.config import get_training_data_since_date
+        from app.config import get_training_data_since_date, get_training_legacy_game_stride
+        from app.legacy_models import LEGACY_DISPLAY_NAMES, LEGACY_POLICIES
         
         training_since = get_training_data_since_date()
+        legacy_stride = get_training_legacy_game_stride()
+        if legacy_stride <= 0:
+            legacy_stride = 1
         con = sqlite3.connect(self.data_db)
         
         # Load events joined with games, filtering:
@@ -133,7 +139,7 @@ class BaseRPSModel(ABC):
         event_where = " AND ".join(event_conditions)
 
         ev = pd.read_sql_query(
-            f"""SELECT e.*, g.easy_mode, g.created_ts_utc
+            f"""SELECT e.*, g.easy_mode, g.created_ts_utc, g.player_name
                FROM events e
                INNER JOIN games g ON e.game_id = g.id
                WHERE {event_where}
@@ -142,6 +148,53 @@ class BaseRPSModel(ABC):
             params=tuple(event_params)
         )
         
+        # Downsample legacy bot games (keep 1 in N) while preserving all human games
+        if legacy_stride > 1 and len(ev) > 0:
+            legacy_display_lower = {name.lower() for name in LEGACY_DISPLAY_NAMES.values()}
+            legacy_policy_set = set(LEGACY_POLICIES)
+
+            def _is_legacy_player(raw_name: Optional[str]) -> bool:
+                if not raw_name:
+                    return False
+                normalized = str(raw_name).strip().lower()
+                if not normalized:
+                    return False
+                if normalized in legacy_policy_set or normalized in legacy_display_lower:
+                    return True
+                tokens = [tok for tok in re.split(r"[^a-z]+", normalized) if tok]
+                return any(tok in legacy_policy_set for tok in tokens)
+
+            # Determine one player_name per game_id (chronological order preserved)
+            game_players = ev.groupby('game_id')['player_name'].first()
+            legacy_games = [game_id for game_id, player in game_players.items() if _is_legacy_player(player)]
+            human_games = [game_id for game_id in game_players.index if game_id not in legacy_games]
+
+            if legacy_games:
+                # Prefer retaining more recent legacy games when striding
+                legacy_games_reversed = list(reversed(legacy_games))
+                legacy_keep_reversed = legacy_games_reversed[::legacy_stride]
+                legacy_games_to_keep = list(reversed(legacy_keep_reversed))
+
+                legacy_events_before = ev[ev['game_id'].isin(legacy_games)].shape[0]
+                games_to_retain = set(legacy_games_to_keep + human_games)
+                ev = ev[ev['game_id'].isin(games_to_retain)].reset_index(drop=True)
+                legacy_events_after = ev[ev['game_id'].isin(legacy_games_to_keep)].shape[0]
+
+                legacy_kept = len(legacy_games_to_keep)
+                legacy_total = len(legacy_games)
+                human_total = len(human_games)
+
+                print(f"🎲 Legacy game downsampling (stride={legacy_stride}):")
+                print(f"   Legacy bot games kept: {legacy_kept}/{legacy_total} ({legacy_kept/legacy_total*100:.1f}% of games)")
+                if legacy_events_before:
+                    legacy_event_ratio = (legacy_events_after / legacy_events_before) * 100.0
+                    print(f"   Legacy events kept: {legacy_events_after}/{legacy_events_before} ({legacy_event_ratio:.1f}% of events)")
+                else:
+                    print("   Legacy events kept: 0 (no legacy events found)")
+                print(f"   Human games preserved: {human_total}")
+            else:
+                print(f"🎲 Legacy game downsampling (stride={legacy_stride}): no legacy bot games detected in filtered dataset")
+
         total_events = len(ev)
         
         # Limit to last 3000 usable rows (or all if less than 3000)
@@ -152,6 +205,8 @@ class BaseRPSModel(ABC):
         else:
             print(f"📊 Using all {len(ev)} usable events (after filtering gambits & test games)")
         
+        final_game_ids = set(ev['game_id'].unique()) if len(ev) else set()
+
         try:
             # Load games with test exclusion and time filtering
             game_conditions = [
@@ -184,6 +239,10 @@ class BaseRPSModel(ABC):
                 con,
                 params=tuple(game_params)
             )
+            if final_game_ids:
+                gm = gm[gm['id'].isin(final_game_ids)].reset_index(drop=True)
+            else:
+                gm = gm.iloc[0:0]
         except Exception:
             gm = pd.DataFrame()
         

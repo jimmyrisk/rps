@@ -20,6 +20,11 @@ _DEFAULT_METRICS_SINCE = "2025-10-10T08:00:00Z"  # Leaderboard reset (Oct 10 202
 _DEFAULT_TRAINING_SINCE = "2025-10-01T00:00:00Z"  # Include all historical training data (October 1+)
 _DEFAULT_ROLLING_WINDOW = 500  # Last N actions/games for rolling metrics
 
+# Legacy bot game downsampling for training
+# Only keep every Nth legacy bot game (Ace, Bob, Cal, Dan, Edd, Fox, Gus, Hal)
+# Human games are always kept at full rate
+_DEFAULT_LEGACY_GAME_STRIDE = 5  # Keep 1 in 5 legacy bot games
+
 # Easy mode difficulty tuning parameters (legacy; retained for backward compatibility)
 # Controls move selection based on expected value rankings for historical sessions
 _DEFAULT_EASY_WORST_PROB = 0.7   # Probability of picking worst EV move in deprecated easy mode
@@ -107,4 +112,18 @@ def get_easy_mode_probabilities() -> tuple[float, float, float]:
     middle = float(os.getenv("EASY_MODE_MIDDLE_PROB", str(_DEFAULT_EASY_MIDDLE_PROB)))
     best = float(os.getenv("EASY_MODE_BEST_PROB", str(_DEFAULT_EASY_BEST_PROB)))
     return (worst, middle, best)
+
+
+@lru_cache(maxsize=1)
+def get_training_legacy_game_stride() -> int:
+    """Return the stride for legacy bot game downsampling.
+    
+    Only every Nth legacy bot game is kept for training. Human games are
+    always kept at full rate. This reduces the dominance of legacy bot
+    games in the training dataset.
+    
+    Returns:
+        Stride value (N) where 1 means keep all games, 5 means keep 1 in 5
+    """
+    return int(os.getenv("TRAINING_LEGACY_GAME_STRIDE", str(_DEFAULT_LEGACY_GAME_STRIDE)))
 

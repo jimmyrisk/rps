@@ -4,7 +4,7 @@ metadata:
   name: legacy-gameplay
   namespace: mlops-poc
 spec:
-  schedule: "*/30 * * * *"  # Every 30 minutes
+  schedule: "*/150 * * * *"  # Every 150 minutes (2.5 hours) - 5x less frequent than before
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 2

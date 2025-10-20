@@ -161,6 +161,7 @@ At this point the platform mirrors production: gameplay endpoints, model trainin
 - Refresh existing aliases with continuation training: `python trainer/train_all_aliases.py --aliases Production B`.
 - Resync artifacts to MinIO (cleans stale runs): `python scripts/sync_promoted_models_to_minio.py --clean`.
 - Reload models in the app pod after external changes: `curl -X POST https://<your-host>/models/reload`.
+- Training dataset uses a single cutoff date exposed as `TRAINING_DATA_SINCE_DATE` (default `2025-10-01T00:00:00Z`); there is no rolling seven-day limit.
 - `scripts/auto_promote_models.py` evaluates Production vs B win rates (minimum three games per alias) and reorders challengers by action accuracy. Promotions are persisted through `/internal/promotion/report` and MinIO alias markers.
 
 ### Observability & debugging

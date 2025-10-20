@@ -129,8 +129,8 @@ def test_model_serving_with_aliases():
     
     # Test metrics recording (should not crash)
     try:
-        manager.record_model_prediction('test_model', 'Production', True, 'test')
-        manager.record_model_game_result('test_model', 'Production', True)
+        manager.record_model_prediction('xgboost', True, source='test')
+        manager.record_model_game_result('xgboost', True)
         print("  ✅ Metrics recording works")
     except Exception as e:
         print(f"  ⚠️ Metrics recording (expected in test): {e}")

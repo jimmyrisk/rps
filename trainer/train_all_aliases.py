@@ -38,7 +38,7 @@ import requests
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.config import get_mlflow_tracking_uri
+from app.config import get_mlflow_tracking_uri, get_training_data_since_date
 from app.legacy_models import get_legacy_display_name, list_legacy_policies
 from bot_vs_bot_sim import APIClient, play_single_game
 from trainer.train_feedforward import FeedforwardRPSModel
@@ -222,9 +222,16 @@ def check_training_needed(
     """
     Check if training is needed based on new data availability.
     Excludes test games from count.
+    
+    NOTE: These counts represent raw database rows BEFORE downsampling.
+    Legacy bot game downsampling (configured via TRAINING_LEGACY_GAME_STRIDE)
+    happens during actual training in BaseRPSModel.load_data().
+    The thresholds here ensure sufficient overall activity before triggering
+    expensive training jobs.
+    
     Returns (should_train, stats_dict)
     """
-    training_since = os.getenv("TRAINING_DATA_SINCE_DATE", "2025-10-03T00:00:00+00:00")
+    training_since = os.getenv("TRAINING_DATA_SINCE_DATE", get_training_data_since_date())
     try:
         lookback_minutes = int(os.getenv("TRAINING_NEW_ROWS_LOOKBACK_MINUTES", "60"))
     except ValueError:

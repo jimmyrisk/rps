@@ -27,6 +27,14 @@ This runbook covers ongoing operations for the production cluster. Installation 
 
 ## Training & Promotion Operations
 
+- **Training data composition**
+	- Legacy bot games (Ace, Bob, Cal, Dan, Edd, Fox, Gus, Hal) are downsampled to 20% (1 in 5 games kept).
+	- Human games are always preserved at 100% rate.
+	- Historical window is controlled solely by `TRAINING_DATA_SINCE_DATE` (default: `2025-10-01T00:00:00Z`); there is **no** rolling 7-day limit.
+	- Configure via `TRAINING_LEGACY_GAME_STRIDE` (default: 5, set to 1 to disable downsampling).
+	- Legacy gameplay CronJob runs every 150 minutes (2.5 hours) to generate training data.
+	- Downsampling happens in `BaseRPSModel.load_data()` during training, not during data collection.
+
 - **Trigger CronJob manually**
 	```bash
 	kubectl create job train-manual-$(date +%s) --from=cronjob/rps-trainer -n mlops-poc
