@@ -85,6 +85,17 @@ def outcome(my_move: str, opp_move: str) -> str:
     return "win" if beater(opp_move) == my_move else "loss"
 
 
+def categorize_by_value(move: str, round_points: Dict[str, float]) -> str:
+    """Classify a move as high/mid/low based on the round's point values."""
+    ordered = sorted(MOVES, key=lambda m: (round_points.get(m, 0.0), m))
+    low, mid, high = ordered[0], ordered[1], ordered[2]
+    if move == high:
+        return "high"
+    if move == low:
+        return "low"
+    return "mid"
+
+
 def opening_move_if_any(cur, game_id: str, round_no: int) -> Optional[str]:
     """
     If the games table has an opening sequence JSON array in 'opening_seq',
@@ -109,8 +120,21 @@ def policy_ace(
     cur: Optional[sqlite3.Cursor] = None,
     in_memory_history: Optional[List[Dict]] = None,
 ) -> str:
-    """Ace: Pure random strategy."""
-    return random.choice(MOVES)
+    """Ace: Counters last user move unless a recent losing streak forces value play."""
+    history = get_game_history(cur, game_id, limit=3, in_memory_history=in_memory_history)
+
+    best_move = max(round_pts, key=round_pts.get)
+
+    if history:
+        recent_losses = sum(1 for h in history if h.get("result") == "win")
+        if recent_losses >= 2:
+            return best_move
+
+        last_user_move = history[-1].get("user_move")
+        if last_user_move in MOVES:
+            return beater(last_user_move)
+
+    return best_move
 
 
 def policy_bob(
@@ -120,17 +144,44 @@ def policy_bob(
     cur: Optional[sqlite3.Cursor] = None,
     in_memory_history: Optional[List[Dict]] = None,
 ) -> str:
-    """Bob: Favors highest-value move, adapts after a losing streak."""
-    best_move = max(round_pts, key=round_pts.get)
+    """Bob: Rotates value tiers, but counters a skid against his own tendencies."""
+    history = get_game_history(cur, game_id, in_memory_history=in_memory_history)
 
-    history = get_game_history(cur, game_id, limit=3, in_memory_history=in_memory_history)
-    if len(history) == 3 and all(h.get("result") == "lose" for h in history):
-        losing_moves = [h.get("bot_move") for h in history if h.get("result") == "lose" and h.get("bot_move")]
-        if losing_moves:
-            most_common = Counter(losing_moves).most_common(1)[0][0]
-            return most_common
+    ordered_moves = sorted(MOVES, key=lambda m: (-round_pts.get(m, 0.0), m))
+    rotation_order = [ordered_moves[0], ordered_moves[-1], ordered_moves[1]]
+    rotation_index = len([h for h in history if h.get("bot_move") in MOVES]) % 3
+    rotation_choice = rotation_order[rotation_index]
 
-    return best_move
+    recent_history = history[-3:]
+    recent_losses = sum(1 for h in recent_history if h.get("result") == "win")
+
+    if recent_losses >= 2 and history:
+        value_preference = Counter()
+        for h in history:
+            bot_move = h.get("bot_move")
+            if bot_move not in MOVES:
+                continue
+            point_snapshot = {
+                "rock": h.get("round_rock_pts", 1.0),
+                "paper": h.get("round_paper_pts", 1.0),
+                "scissors": h.get("round_scissors_pts", 1.0),
+            }
+            tier = categorize_by_value(bot_move, point_snapshot)
+            value_preference[tier] += 1
+
+        if value_preference:
+            preferred_tier, _ = value_preference.most_common(1)[0]
+            current_tiers = sorted(MOVES, key=lambda m: (round_pts.get(m, 0.0), m))
+            tier_to_move = {
+                "low": current_tiers[0],
+                "mid": current_tiers[1],
+                "high": current_tiers[2],
+            }
+            target_move = tier_to_move.get(preferred_tier)
+            if target_move in MOVES:
+                return beater(target_move)
+
+    return rotation_choice
 
 
 def policy_cal(
