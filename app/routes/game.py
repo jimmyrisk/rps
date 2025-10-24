@@ -9,7 +9,7 @@ import logging
 import uuid
 import json
 from datetime import datetime, timezone
-from app.model_serving import get_model_manager
+from app.model_serving import get_model_manager, MODEL_ALIASES
 from app.db import connect
 from app.game_utils import outcome
 from app.features import extract_inference_features
@@ -84,7 +84,7 @@ def start_game(request: StartGameRequest, http_request: Request):
         # Eager load all 4 model aliases from MinIO for fast inference during gameplay
         # This prevents slow first-round delays when models load lazily
         logger.info(f"Preloading all {model_type} aliases for game {game_id[:8]}...")
-        for alias in ["Production", "B", "shadow1", "shadow2"]:
+        for alias in MODEL_ALIASES:
             if not manager.is_model_loaded(f"{model_type}@{alias}"):
                 logger.info(f"  Loading {model_type}@{alias} from MinIO...")
                 manager.load_model_with_alias(model_type, alias)

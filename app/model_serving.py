@@ -119,6 +119,9 @@ MODEL_AB_SPLIT_RATIOS = {
     for model_type in ["xgboost", "feedforward_nn", "multinomial_logistic"]
 }
 
+# Model aliases used throughout the system (Production, B, shadow1, shadow2)
+MODEL_ALIASES = ["Production", "B", "shadow1", "shadow2"]
+
 FALLBACK_SOURCES = {
     "fallback",
     "forced_fallback",
@@ -1915,10 +1918,34 @@ class ModelManager:
         return self.load_model(DEFAULT_MODEL_TYPE)
     
     def load_all_models(self) -> Dict[str, bool]:
-        """Load all available models"""
+        """Load all available models with aliases (12 total: 3 types × 4 aliases).
+        
+        This ensures that after a cache clear (e.g., during /models/reload),
+        all alias-specific models used by games are properly restored.
+        """
         results = {}
+        
+        # Load all 12 aliased models that games actually use
         for model_type in AVAILABLE_MODELS:
-            results[model_type] = self.load_model(model_type)
+            for alias in MODEL_ALIASES:
+                cache_key = f"{model_type}@{alias}"
+                success = self.load_model_with_alias(model_type, alias)
+                results[cache_key] = success
+                if success:
+                    logger.debug(f"Loaded {cache_key}")
+                else:
+                    logger.warning(f"Failed to load {cache_key}")
+        
+        # Also load base models for backward compatibility (though games don't use them)
+        for model_type in AVAILABLE_MODELS:
+            success = self.load_model(model_type)
+            results[model_type] = success
+            if success:
+                logger.debug(f"Loaded base model {model_type}")
+        
+        logger.info(f"Loaded {sum(results.values())}/{len(results)} models "
+                   f"({len(MODEL_ALIASES) * len(AVAILABLE_MODELS)} aliased + "
+                   f"{len(AVAILABLE_MODELS)} base)")
         return results
 
     def record_prediction_source(
